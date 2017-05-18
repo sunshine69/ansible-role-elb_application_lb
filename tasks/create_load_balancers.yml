@@ -1,0 +1,108 @@
+- block:
+    - name: Get the Loadbalancer Cert
+      iam_server_certificate_facts:
+        region: "{{region}}"
+        profile: "{{ aws_account_name }}"
+        name: "{{ certs.name}}"
+      register: cert
+
+    - name: Set the server certificate ID
+      set_fact:
+        server_certificate: "{{cert.results[certs.name]}}"
+
+    - debug:
+        var: server_certificate
+        verbosity: 2
+  when: certs
+
+- name: Find the subnets available for {{ role_type }} in {{ env }}
+  ec2_vpc_subnet_facts:
+    region: "{{ region }}"
+    profile: "{{ aws_account_name }}"
+    filters:
+      "tag:Environment": "{{ env }}"
+      "tag:Application": "{{ role_type }}"
+      "tag:Tier": load_balancer
+  register: lb_subnets
+
+- debug:
+    var: lb_subnets
+    verbosity: 2
+
+- name: find the security groups for {{ role_type }} in {{ env }}
+  ec2_group_facts:
+    region: "{{ region }}"
+    profile: "{{ aws_account_name }}"
+    filters:
+      "tag:Environment": "{{ env }}"
+      "tag:Application": "{{ role_type}}"
+      "tag:Tier": load_balancer
+  register: lb_security_groups
+
+- debug:
+    var: lb_security_groups
+    verbosity: 2
+
+- name: find the cloudfront security groups for {{ role_type }} in {{ env }}
+  ec2_group_facts:
+    region: "{{ region }}"
+    profile: "{{ aws_account_name }}"
+    filters:
+      "tag:Name": "xvt-{{ vpc_name }}-sg-cloudfront-http*"
+      "tag:AutoUpdate": "true"
+      "tag:Protocol": "http*"
+      "tag:Application": "{{ role_type }}"
+      "tag:Tier": cdn
+  register: lb_cloudfront_security_groups
+
+- name: set security group facts
+  set_fact:
+    security_groups:
+      "True": "{{ (lb_security_groups.security_groups | json_query('[?tags.Public == `True`].group_id')) + (lb_cloudfront_security_groups.security_groups | json_query('[].group_id')) }}"
+      "False": "{{ lb_security_groups.security_groups | json_query('[?tags.Public == `False`].group_id') }}"
+
+- name: Create {{ role_type }} load balancer
+  elb_application_lb:
+    name: "{{ item.0.name }}"
+    region: "{{ region }}"
+    profile: "{{ aws_account_name }}"
+    state: present
+    scheme: "{{ 'internet-facing' if item.0.public else 'internal' }}"
+    subnets: "{{ lb_subnets | json_query('subnets[?tags.Public == `' ~ item.1.public ~ '`].id') }}"
+    security_groups: "{{ security_groups[item.1.public|string] }}"
+    access_logs_enabled: "{{ item.0.access_logs_enabled }}"
+    access_logs_s3_bucket: "{{ item.0.access_logs_s3_location }}" # This value is required if access_logs is set
+    access_logs_s3_prefix: "{{ item.0.access_logs_s3_prefix }}"
+    listeners: "{{ loadbalancer_listeners|map('combine', {'Port': loadbalancer_target_group.port|int})|list }}"
+    tags:
+      Environment: "{{ env }}"
+      Application: "{{ role_type }}"
+      Tier: load-balancers
+      Account: "{{ aws_account_name }}"
+      Public: "{{ item.1.public|string }}"
+      DNS: "{{ item.0.dns_record }}"
+  with_nested:
+    - "{{ loadbalancers }}"
+    -
+      - public: True
+      - public: False
+  when: item.0.public == item.1.public
+  register: newly_created_lb
+  retries: 5
+  delay: 10
+
+- name: Create Route 53 internal load balancer record entry
+  route53:
+    profile: "{{ aws_account_name }}"
+    private_zone: true
+    command: create
+    zone: "{{ env }}.{{ tld_name_internal }}"
+    record: "{{ item.item.dns_record }}.{{env}}.{{ tld_name_internal }}"
+    value: "{{ item.result.dns_name }}"
+    type: CNAME
+    ttl: 300
+    overwrite: yes
+    retry_interval: 5
+  with_items:
+    - "{{ newly_created_lb.results }}"
+  when: not item.skipped|default(False) and item.result is defined
