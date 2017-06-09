@@ -91,18 +91,22 @@
   retries: 5
   delay: 10
 
+- debug:
+    var: newly_created_lb
+    verbosity: 2
+
 - name: Create Route 53 internal load balancer record entry
   route53:
     profile: "{{ aws_account_name }}"
     private_zone: true
     command: create
     zone: "{{ env }}.{{ tld_name_internal }}"
-    record: "{{ item.item.dns_record }}.{{env}}.{{ tld_name_internal }}"
-    value: "{{ item.result.dns_name }}"
+    record: "{{ item.tags.DNS }}.{{env}}.{{ tld_name_internal }}"
+    value: "{{ item.dns_name }}"
     type: CNAME
     ttl: 300
     overwrite: yes
     retry_interval: 5
   with_items:
     - "{{ newly_created_lb.results }}"
-  when: not item.skipped|default(False) and item.result is defined
+  when: not item.skipped|default(False) and item._ansible_item_result is defined and item._ansible_item_result
