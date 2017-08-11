@@ -73,7 +73,7 @@
     access_logs_enabled: "{{ item.0.access_logs_enabled }}"
     access_logs_s3_bucket: "{{ item.0.access_logs_s3_location }}" # This value is required if access_logs is set
     access_logs_s3_prefix: "{{ item.0.access_logs_s3_prefix }}"
-    listeners: "{{ loadbalancer_listeners|map('combine', {'Port': loadbalancer_target_group.port|int})|list }}"
+    listeners: "{{ loadbalancer_listeners }}"
     tags:
       Environment: "{{ env }}"
       Application: "{{ role_type }}"
