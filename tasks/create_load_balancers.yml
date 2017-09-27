@@ -1,6 +1,6 @@
 - block:
     - name: Get the Loadbalancer Cert
-      iam_server_certificate_facts:
+      aws_acm_facts:
         region: "{{region}}"
         profile: "{{ aws_account_name }}"
         name: "{{ certs.name}}"
@@ -8,7 +8,7 @@
 
     - name: Set the server certificate ID
       set_fact:
-        server_certificate: "{{cert.results[certs.name]}}"
+        server_certificate: "{{cert.certificates[0]}}"
 
     - debug:
         var: server_certificate
