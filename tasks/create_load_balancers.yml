@@ -2,7 +2,7 @@
     - name: Get the Loadbalancer Cert
       aws_acm_facts:
         region: "{{region}}"
-        profile: "{{ aws_account_name }}"
+        profile: "{{ profile|default(omit) }}"
         name: "{{ certs.name}}"
       register: cert
 
@@ -18,7 +18,7 @@
 - name: Find the subnets available for {{ role_type }} in {{ env }}
   ec2_vpc_subnet_facts:
     region: "{{ region }}"
-    profile: "{{ aws_account_name }}"
+    profile: "{{ profile|default(omit) }}"
     filters:
       "tag:Environment": "{{ env }}"
       "tag:Application": "{{ role_type }}"
@@ -32,7 +32,7 @@
 - name: find the security groups for {{ role_type }} in {{ env }}
   ec2_group_facts:
     region: "{{ region }}"
-    profile: "{{ aws_account_name }}"
+    profile: "{{ profile|default(omit) }}"
     filters:
       "tag:Environment": "{{ env }}"
       "tag:Application": "{{ role_type}}"
@@ -46,7 +46,7 @@
 - name: find the cloudfront security groups for {{ role_type }} in {{ env }}
   ec2_group_facts:
     region: "{{ region }}"
-    profile: "{{ aws_account_name }}"
+    profile: "{{ profile|default(omit) }}"
     filters:
       "tag:Name": "xvt-{{ vpc_name }}-sg-cloudfront-http*"
       "tag:AutoUpdate": "true"
@@ -65,7 +65,7 @@
   elb_application_lb:
     name: "{{ item.0.name }}"
     region: "{{ region }}"
-    profile: "{{ aws_account_name }}"
+    profile: "{{ profile|default(omit) }}"
     state: present
     scheme: "{{ 'internet-facing' if item.0.public else 'internal' }}"
     subnets: "{{ lb_subnets | json_query('subnets[?tags.Public == `' ~ item.1.public ~ '`].id') }}"
@@ -97,7 +97,7 @@
 
 - name: Create Route 53 internal load balancer record entry
   route53:
-    profile: "{{ aws_account_name }}"
+    profile: "{{ profile|default(omit) }}"
     private_zone: true
     command: create
     zone: "{{ env }}.{{ tld_name_internal }}"

@@ -2,7 +2,7 @@
   ec2_application_lb:
     name: "{{ item.name }}"
     region: "{{ region }}"
-    profile: "{{ aws_account_name }}"
+    profile: "{{ profile|default(omit) }}"
     state: absent
   with_items: "{{ loadbalancers }}"
 
