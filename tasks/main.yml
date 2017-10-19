@@ -1,2 +1,2 @@
 ---
-- include: "{{ stage}}_load_balancers.yml"
+- include_tasks: "{{ stage}}_load_balancers.yml"
