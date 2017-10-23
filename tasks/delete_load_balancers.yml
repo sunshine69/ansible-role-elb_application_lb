@@ -1,5 +1,5 @@
 - name: Destroy {{ elb_role_type }} load balancer
-  ec2_application_lb:
+  elb_application_lb:
     name: "{{ item.name }}"
     region: "{{ region }}"
     profile: "{{ profile|default(omit) }}"
