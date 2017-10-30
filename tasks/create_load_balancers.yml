@@ -13,7 +13,24 @@
     - debug:
         var: server_certificate
         verbosity: 2
-  when: certs
+  when: "certs.type|default('acm') == 'acm'"
+
+- block:
+    - name: Get the Loadbalancer Cert
+      iam_server_certificate_facts:
+        region: "{{region}}"
+        profile: "{{ profile|default(omit) }}"
+        name: "{{ certs.name}}"
+      register: cert
+
+    - name: Set the server certificate ID
+      set_fact:
+        server_certificate: "{{cert.results[certs.name]}}"
+
+    - debug:
+        var: server_certificate
+        verbosity: 2
+  when: "certs.type|default('acm') == 'iam'"
 
 - name: Find the subnets available for {{ role_type }} in {{ env }}
   ec2_vpc_subnet_facts:
