@@ -8,11 +8,8 @@
 
     - name: Set the server certificate ID
       set_fact:
-        server_certificate: "{{cert.certificates[0]}}"
+        server_certificate_arn: "{{cert.certificates[0].certificate_arn}}"
 
-    - debug:
-        var: server_certificate
-        verbosity: 2
   when: "certs.type|default('acm') == 'acm'"
 
 - block:
@@ -25,7 +22,7 @@
 
     - name: Set the server certificate ID
       set_fact:
-        server_certificate: "{{cert.results[certs.name]}}"
+        server_certificate_arn: "{{cert.results[certs.name].arn}}"
 
     - debug:
         var: server_certificate
