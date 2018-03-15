@@ -1,3 +1,8 @@
+# The set_fact 'certificate_arn' by the block below is not actually get used
+# directly in this task file but it is used in the inventory variable
+# 'loadbalancer_listeners' which in turn get used in this task file when
+# calling ansible module elb_application_lb
+
 - block:
     - name: Get the Loadbalancer Cert
       aws_acm_facts:
@@ -8,7 +13,7 @@
 
     - name: Set the server certificate ID
       set_fact:
-        server_certificate_arn: "{{cert.certificates[0].certificate_arn}}"
+        certificate_arn: "{{cert.certificates[0].certificate_arn}}"
 
   when: "certs.type|default('acm') == 'acm'"
 
@@ -22,7 +27,7 @@
 
     - name: Set the server certificate ID
       set_fact:
-        server_certificate_arn: "{{cert.results[certs.name].arn}}"
+        certificate_arn: "{{cert.results[certs.name].arn}}"
 
     - debug:
         var: server_certificate
