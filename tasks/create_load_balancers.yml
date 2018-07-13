@@ -119,8 +119,8 @@
     profile: "{{ profile|default(omit) }}"
     private_zone: true
     command: create
-    zone: "{{ env }}.{{ tld_name_internal }}"
-    record: "{{ item.tags.DNS }}.{{env}}.{{ tld_name_internal }}"
+    zone: "{{ tld_name_internal }}"
+    record: "{{ item.tags.DNS }}.{{ tld_name_internal }}"
     value: "{{ item.dns_name }}"
     type: CNAME
     ttl: 300
