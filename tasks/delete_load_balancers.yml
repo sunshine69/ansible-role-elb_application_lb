@@ -5,4 +5,3 @@
     profile: "{{ profile|default(omit) }}"
     state: absent
   with_items: "{{ loadbalancers }}"
-
