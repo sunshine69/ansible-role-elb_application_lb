@@ -5,10 +5,11 @@
 
 - block:
     - name: Get the Loadbalancer Cert
-      aws_acm_facts:
+      aws_acm_info:
         region: "{{region}}"
         profile: "{{ profile|default(omit) }}"
         name: "{{ certs.name}}"
+        statuses: "ISSUED"
       register: cert
 
     - name: Set the server certificate ID
@@ -19,7 +20,7 @@
 
 - block:
     - name: Get the Loadbalancer Cert
-      iam_server_certificate_facts:
+      iam_server_certificate_info:
         region: "{{region}}"
         profile: "{{ profile|default(omit) }}"
         name: "{{ certs.name}}"
