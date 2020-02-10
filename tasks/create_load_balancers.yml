@@ -36,7 +36,7 @@
   when: "certs.type|default('acm') == 'iam'"
 
 - name: Find the subnets available for {{ role_type }} in {{ env }}
-  ec2_vpc_subnet_facts:
+  ec2_vpc_subnet_info:
     region: "{{ region }}"
     profile: "{{ profile|default(omit) }}"
     filters:
@@ -50,7 +50,7 @@
     verbosity: 2
 
 - name: find the security groups for {{ role_type }} in {{ env }}
-  ec2_group_facts:
+  ec2_group_info:
     region: "{{ region }}"
     profile: "{{ profile|default(omit) }}"
     filters:
@@ -64,7 +64,7 @@
     verbosity: 2
 
 - name: find the cloudfront security groups for {{ role_type }} in {{ env }}
-  ec2_group_facts:
+  ec2_group_info:
     region: "{{ region }}"
     profile: "{{ profile|default(omit) }}"
     filters:
